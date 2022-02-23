@@ -44,10 +44,7 @@ class ViewController: UIViewController {
   
   @MainActor
   private func updateUI() {
-    assert(Thread.isMainThread == Thread.isMultiThreaded(),
-           "UI 업데이트는 메인 스레드에서 실행되어야 합니다.")
     tableView.reloadData()
-    
   }
 
 }
