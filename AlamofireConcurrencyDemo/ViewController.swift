@@ -10,43 +10,54 @@ import UIKit
 struct Joke: Codable {
   let type: String
   let value: [Value]
-}
-
-struct Value: Codable {
-  let id: Int
-  let joke: String
+  
+  struct Value: Codable {
+    let id: Int
+    let joke: String
+  }
 }
 
 class ViewController: UIViewController {
 
   @IBOutlet weak var tableView: UITableView!
   
-  private var jokes: [Value] = []
+  private var jokes: [Joke.Value] = []
   
   override func viewDidLoad() {
     super.viewDidLoad()
     tableView.dataSource = self
     
     Task {
-      try? await fetch()
-      updateUI()
+      await retrieveJokes()
     }
   }
   
-  private func fetch() async throws {
-    let joke = try? await AppNetworking.shared.requestJSON("https://api.icndb.com/jokes/random/50",
-                                                           type: Joke.self,
-                                                           method: .get,
-                                                           parameters: nil)
-    guard let value = joke?.value else { return }
-    jokes = value
+  private func retrieveJokes() async {
+    do {
+      let joke = try await AppNetworking.shared.requestJSON("https://api.icndb.com/jokes/random/50",
+                                                             type: Joke.self,
+                                                             method: .get,
+                                                             parameters: nil)
+      updateUI(jokes: joke.value)
+    } catch {
+      updateUI(error: error)
+    }
   }
   
   @MainActor
-  private func updateUI() {
+  private func updateUI(error: Error) {
+    let label = UILabel()
+    label.numberOfLines = 0
+    label.text = error.localizedDescription
+    label.frame = view.bounds
+    view.addSubview(label)
+  }
+  
+  @MainActor
+  private func updateUI(jokes: [Joke.Value]) {
+    self.jokes = jokes
     tableView.reloadData()
   }
-
 }
 
 // MARK: - UITableViewDataSource
